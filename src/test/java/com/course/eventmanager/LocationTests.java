@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,7 @@ public class LocationTests {
     }
 
     @Test
+    @WithMockUser(username = "admin", authorities = "ADMIN")
     void successCreateLocation() throws Exception {
         when(locationDtoConverter.toDomain(any(LocationDto.class))).thenReturn(domainObject);
         when(locationService.create(any(Location.class))).thenReturn(domainObject);
