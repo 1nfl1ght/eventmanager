@@ -3,9 +3,9 @@ package com.course.eventmanager.model.user;
 import jakarta.validation.constraints.NotBlank;
 
 public class SignInRequest {
-    @NotBlank
+    @NotBlank(message = "Login must not be blank")
     private String login;
-    @NotBlank
+    @NotBlank(message = "Password must not be blank")
     private String password;
 
     public SignInRequest() {

@@ -4,6 +4,7 @@ import com.course.eventmanager.model.user.*;
 import com.course.eventmanager.security.jwt.AuthenticationService;
 import com.course.eventmanager.service.UserService;
 import com.course.eventmanager.util.user.UserConverter;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class UsersController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto registerUser(@RequestBody SignUpRequest signUpRequest) {
+    public UserDto registerUser(@RequestBody @Valid SignUpRequest signUpRequest) {
         log.info("Request for sign-up: login={}", signUpRequest.getLogin());
         User user = userService.registerUser(signUpRequest);
         return userConverter.domainToDto(user);
@@ -39,7 +40,7 @@ public class UsersController {
     }
 
     @PostMapping("/auth")
-    public JwtTokenResponse authenticate(@RequestBody SignInRequest signInRequest) {
+    public JwtTokenResponse authenticate(@RequestBody @Valid SignInRequest signInRequest) {
         log.info("Request for sign-in: login={}", signInRequest.getLogin());
         String token = authenticationService.authenticateUser(signInRequest);
         return new JwtTokenResponse(token);

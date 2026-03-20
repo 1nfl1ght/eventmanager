@@ -15,7 +15,6 @@ import java.util.List;
 @RequestMapping("/locations")
 public class LocationController {
 
-
     private static final Logger log = LoggerFactory.getLogger(LocationController.class);
 
     private final LocationService locationService;
@@ -28,7 +27,7 @@ public class LocationController {
 
     @GetMapping
     public List<LocationDto> getAll() {
-        return locationService.getAll().stream()
+        return locationService.getAllLocations().stream()
                 .map(locationDtoConverter::toDto)
                 .toList();
     }
@@ -36,27 +35,27 @@ public class LocationController {
     @GetMapping("/{id}")
     public LocationDto getLocation(@PathVariable("id") Long id) {
         log.info("Location request: id={}", id);
-        return locationDtoConverter.toDto(locationService.getById(id));
+        return locationDtoConverter.toDto(locationService.getLocationById(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public LocationDto createLocation(@RequestBody @Valid LocationDto locationDto) {
         log.info("Location create: {}", locationDto.getName());
-        return locationDtoConverter.toDto(locationService.create(locationDtoConverter.toDomain(locationDto)));
+        return locationDtoConverter.toDto(locationService.createLocation(locationDtoConverter.toDomain(locationDto)));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteLocation(@PathVariable("id") Long id) {
         log.info("Location delete: id={}", id);
-        locationService.deleteById(id);
+        locationService.deleteLocationById(id);
     }
 
     @PutMapping("/{id}")
     public LocationDto updateLocation(@PathVariable("id") Long id, @RequestBody @Valid LocationDto locationDto) {
         log.info("Update location: id={}, name={}", id, locationDto.getName());
-        return locationDtoConverter.toDto(locationService.update(id, locationDtoConverter.toDomain(locationDto)));
+        return locationDtoConverter.toDto(locationService.updateLocation(id, locationDtoConverter.toDomain(locationDto)));
     }
 
 }

@@ -7,14 +7,14 @@ import jakarta.validation.constraints.Size;
 
 public class SignUpRequest {
 
-    @NotBlank
-    @Size(min = 5)
+    @NotBlank(message = "Login must not be blank")
+    @Size(min = 5, message = "Login must be more than 5 characters long")
     private String login;
-    @NotBlank
-    @Size(min = 5)
+    @NotBlank(message = "Password must not be blank")
+    @Size(min = 5, message = "Password must be more than 5 characters long")
     private String password;
-    @NotNull
-    @Min(value = 0)
+    @NotNull(message = "Age must not be null")
+    @Min(value = 0, message = "Age must be not less than 0")
     private Integer age;
 
     public SignUpRequest() {

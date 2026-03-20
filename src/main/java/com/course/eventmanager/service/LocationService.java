@@ -1,7 +1,6 @@
 package com.course.eventmanager.service;
 
 import com.course.eventmanager.model.location.Location;
-import com.course.eventmanager.model.location.LocationDto;
 import com.course.eventmanager.model.location.LocationEntity;
 import com.course.eventmanager.repository.LocationRepository;
 import com.course.eventmanager.util.location.LocationEntityConverter;
@@ -21,30 +20,30 @@ public class LocationService {
         this.locationEntityConverter = locationEntityConverter;
     }
 
-    public List<Location> getAll() {
+    public List<Location> getAllLocations() {
         List<LocationEntity> locations = locationRepository.findAll();
         return locations.stream()
                 .map(locationEntityConverter::toDomain)
                 .toList();
     }
 
-    public Location getById(Long id) {
+    public Location getLocationById(Long id) {
         return locationEntityConverter.toDomain(locationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Location with id %d not found", id))));
     }
 
-    public Location create(Location location) {
+    public Location createLocation(Location location) {
         return locationEntityConverter.toDomain(locationRepository.save(locationEntityConverter.toEntity(location)));
     }
 
-    public void deleteById(Long id) {
+    public void deleteLocationById(Long id) {
         if (!locationRepository.existsById(id)) {
             throw new EntityNotFoundException(String.format("Location with id %d not found", id));
         }
         locationRepository.deleteById(id);
     }
 
-    public Location update(Long id, Location locationToUpdate) {
+    public Location updateLocation(Long id, Location locationToUpdate) {
         if (!locationRepository.existsById(id)) {
             throw new EntityNotFoundException(String.format("Location with id %d not found", id));
         }

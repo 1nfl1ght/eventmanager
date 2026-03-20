@@ -12,6 +12,9 @@ public class Location {
     private Integer capacity;
     private String description;
 
+    public Location() {
+    }
+
     public Location(Long id, String name, String address, Integer capacity, String description) {
         this.id = id;
         this.name = name;
