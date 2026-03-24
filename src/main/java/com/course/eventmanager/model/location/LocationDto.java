@@ -7,12 +7,12 @@ import jakarta.validation.constraints.NotNull;
 
 public class LocationDto {
     private Long id;
-    @NotBlank(message = "must not be blank")
+    @NotBlank(message = "Location name must not be blank")
     private String name;
-    @NotBlank(message = "must not be blank")
+    @NotBlank(message = "Location address must not be blank")
     private String address;
-    @NotNull(message = "must not be null")
-    @Min(value = 5, message = "must not be less than 5")
+    @NotNull(message = "Location capacity must not be null")
+    @Min(value = 5, message = "Location capacity must not be less than 5")
     private Integer capacity;
     private String description;
 

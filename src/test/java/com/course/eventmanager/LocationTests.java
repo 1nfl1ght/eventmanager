@@ -4,9 +4,7 @@ import com.course.eventmanager.model.location.Location;
 import com.course.eventmanager.model.location.LocationDto;
 import com.course.eventmanager.service.LocationService;
 import com.course.eventmanager.util.location.LocationDtoConverter;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +39,7 @@ public class LocationTests {
     private LocationDto inputDto;
     private Location domainObject;
     private LocationDto responseDto;
+    private static final long LOCATION_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -51,9 +51,10 @@ public class LocationTests {
     }
 
     @Test
+    @WithMockUser(username = "admin", authorities = "ADMIN")
     void successCreateLocation() throws Exception {
         when(locationDtoConverter.toDomain(any(LocationDto.class))).thenReturn(domainObject);
-        when(locationService.create(any(Location.class))).thenReturn(domainObject);
+        when(locationService.createLocation(any(Location.class))).thenReturn(domainObject);
         when(locationDtoConverter.toDto(any(Location.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/locations")
@@ -68,25 +69,13 @@ public class LocationTests {
     }
 
     @Test
+    @WithMockUser(username = "admin", authorities = "ADMIN")
     void unsuccessCreateLocationWithNullFields() throws Exception {
-        LocationDto locationDto = new LocationDto(
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        Location location = new Location(
-                null,
-                null,
-                null,
-                null,
-                null
-        );
+        LocationDto locationDto = new LocationDto();
+        Location location = new Location();
 
         when(locationDtoConverter.toDomain(any(LocationDto.class))).thenReturn(location);
-        when(locationService.create(any(Location.class))).thenReturn(domainObject);
+        when(locationService.createLocation(any(Location.class))).thenReturn(domainObject);
 
         String locationJson = mapper.writeValueAsString(locationDto);
 
@@ -100,12 +89,13 @@ public class LocationTests {
     }
 
     @Test
+    @WithMockUser(username = "user", authorities = "USER")
     void successGetLocation() throws Exception {
         when(locationDtoConverter.toDomain(any(LocationDto.class))).thenReturn(domainObject);
         when(locationDtoConverter.toDto(any(Location.class))).thenReturn(responseDto);
-        when(locationService.getById(1L)).thenReturn(domainObject);
+        when(locationService.getLocationById(LOCATION_ID)).thenReturn(domainObject);
 
-        mockMvc.perform(get("/locations/{id}", 1L)
+        mockMvc.perform(get("/locations/{id}", LOCATION_ID)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Test Location"))
@@ -114,6 +104,7 @@ public class LocationTests {
     }
 
     @Test
+    @WithMockUser(username = "admin", authorities = "ADMIN")
     void successUpdateLocation() throws Exception {
         Location updatedLocation = new Location(
                 1L,
@@ -135,23 +126,24 @@ public class LocationTests {
         when(locationDtoConverter.toDto(any(Location.class))).thenReturn(updatedLocationDto);
 
 
-        when(locationService.update(eq(1L), any(Location.class))).thenReturn(updatedLocation);
+        when(locationService.updateLocation(eq(LOCATION_ID), any(Location.class))).thenReturn(updatedLocation);
 
-        mockMvc.perform(put("/locations/{id}", 1L)
+        mockMvc.perform(put("/locations/{id}", LOCATION_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(updatedLocationDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("updated name"))
                 .andExpect(jsonPath("$.address").value("updated address"))
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.id").value(LOCATION_ID))
                 .andDo(print());
     }
 
     @Test
+    @WithMockUser(username = "admin", authorities = "ADMIN")
     void successDeleteLocation() throws Exception {
-        doNothing().when(locationService).deleteById(1L);
+        doNothing().when(locationService).deleteLocationById(LOCATION_ID);
 
-        mockMvc.perform(delete("/locations/{id}", 1L))
+        mockMvc.perform(delete("/locations/{id}", LOCATION_ID))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""))
                 .andDo(print());
