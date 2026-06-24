@@ -70,6 +70,18 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.GET, "/locations/**")
                                 .hasAnyAuthority("ADMIN", "USER")
 
+
+                                .requestMatchers(HttpMethod.POST, "/events/search")
+                                .hasAnyAuthority("ADMIN", "USER")
+                                .requestMatchers(HttpMethod.POST, "/events")
+                                .hasAnyAuthority("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/events/**")
+                                .hasAnyAuthority("ADMIN", "USER")
+                                .requestMatchers(HttpMethod.PUT, "/events/**")
+                                .hasAnyAuthority("ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/events/**")
+                                .hasAnyAuthority("ADMIN", "USER")
+
                                 .requestMatchers(HttpMethod.POST, "/users")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST, "/users/auth")

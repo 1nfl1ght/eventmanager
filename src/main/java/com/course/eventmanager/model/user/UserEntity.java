@@ -1,7 +1,11 @@
 package com.course.eventmanager.model.user;
 
+import com.course.eventmanager.model.registration.RegistrationEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -18,6 +22,19 @@ public class UserEntity {
     private Integer age;
     @Column(name = "role")
     private String role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RegistrationEntity> registrations = new ArrayList<>();
+
+    public void addRegistration(RegistrationEntity registration) {
+        registrations.add(registration);
+        registration.setUser(this);
+    }
+
+    public void removeRegistration(RegistrationEntity registration) {
+        registrations.remove(registration);
+        registration.setUser(null);
+    }
 
     public UserEntity() {
     }
