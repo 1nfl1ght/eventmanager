@@ -7,6 +7,7 @@ import com.course.eventmanager.service.RegistrationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -29,8 +30,9 @@ public class RegistrationController {
 
     @DeleteMapping("/cancel/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelEvent(@PathVariable("eventId") Long eventId) {
-        registrationService.cancelEvent(eventId);
+    public void cancelEvent(@PathVariable("eventId") Long eventId) throws AccessDeniedException {
+        User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
+        registrationService.cancelEvent(eventId, currentUser);
     }
 
     @GetMapping("/my")
