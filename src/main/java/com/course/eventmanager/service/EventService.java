@@ -90,24 +90,27 @@ public class EventService {
                 .toList();
     }
 
+    @Transactional
     public Event updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, User currentUser) throws AccessDeniedException {
 
-        Event event = eventConverter.entityToDomain(eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found")));
+        EventEntity eventEntity = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
-        if (!event.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
+        if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
             throw new AccessDeniedException("Access denied");
         }
 
-        LocationEntity location = locationRepository.findById(eventUpdateRequest.getLocationId()).orElseThrow(() -> new EntityNotFoundException("Location with id " + eventUpdateRequest.getLocationId() + " not found"));
+        LocationEntity location = locationRepository.findById(eventUpdateRequest.getLocationId())
+                .orElseThrow(() -> new EntityNotFoundException("Location with id " + eventUpdateRequest.getLocationId() + " not found"));
 
-        event.setName(eventUpdateRequest.getName());
-        event.setMaxPlaces(eventUpdateRequest.getMaxPlaces());
-        event.setStartAt(eventUpdateRequest.getDate());
-        event.setCost(eventUpdateRequest.getCost());
-        event.setDuration(eventUpdateRequest.getDuration());
-        event.setLocation(locationEntityConverter.toDomain(location));
+        eventEntity.setName(eventUpdateRequest.getName());
+        eventEntity.setMaxPlaces(eventUpdateRequest.getMaxPlaces());
+        eventEntity.setStartAt(eventUpdateRequest.getDate());
+        eventEntity.setCost(eventUpdateRequest.getCost());
+        eventEntity.setDuration(eventUpdateRequest.getDuration());
+        eventEntity.setLocation(location);
 
-        EventEntity savedEvent = eventRepository.save(eventConverter.domainToEntity(event));
+        EventEntity savedEvent = eventRepository.save(eventEntity);
         return eventConverter.entityToDomain(savedEvent);
     }
 }
