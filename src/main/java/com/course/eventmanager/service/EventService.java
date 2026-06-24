@@ -11,9 +11,9 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.location.LocationEntityConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -58,7 +58,7 @@ public class EventService {
         return eventConverter.entityToDomain(savedEvent);
     }
 
-    public void deleteEvent(Long eventId, User currentUser) throws AccessDeniedException {
+    public void deleteEvent(Long eventId, User currentUser) {
 
         Event event = eventConverter.entityToDomain(eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found")));
 
@@ -91,7 +91,7 @@ public class EventService {
     }
 
     @Transactional
-    public Event updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, User currentUser) throws AccessDeniedException {
+    public Event updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, User currentUser) {
 
         EventEntity eventEntity = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));

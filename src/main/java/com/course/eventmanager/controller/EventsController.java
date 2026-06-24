@@ -13,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -39,7 +38,7 @@ public class EventsController {
 
     @DeleteMapping("/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteEvent(@PathVariable("eventId") Long eventId) throws AccessDeniedException {
+    public void deleteEvent(@PathVariable("eventId") Long eventId) {
         User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
         eventService.deleteEvent(eventId, currentUser);
     }
@@ -50,7 +49,7 @@ public class EventsController {
     }
 
     @PutMapping("/{eventId}")
-    public EventDto updateEvent(@PathVariable("eventId") Long eventId, @RequestBody @Valid EventUpdateRequest eventUpdateRequest) throws AccessDeniedException {
+    public EventDto updateEvent(@PathVariable("eventId") Long eventId, @RequestBody @Valid EventUpdateRequest eventUpdateRequest) {
         User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
         return eventConverter.domainToDto(eventService.updateEvent(eventId, eventUpdateRequest, currentUser));
     }

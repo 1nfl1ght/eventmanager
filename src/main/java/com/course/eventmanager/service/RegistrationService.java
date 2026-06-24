@@ -13,9 +13,9 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.user.UserConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 @Service
@@ -64,7 +64,7 @@ public class RegistrationService {
         eventRepository.save(eventEntity);
     }
 
-    public void cancelEvent(Long eventId, User currentUser) throws AccessDeniedException {
+    public void cancelEvent(Long eventId, User currentUser) {
         EventEntity eventEntity = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
         if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
