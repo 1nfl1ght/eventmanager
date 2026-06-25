@@ -3,7 +3,6 @@ package com.course.eventmanager.service;
 import com.course.eventmanager.model.event.Event;
 import com.course.eventmanager.model.event.EventEntity;
 import com.course.eventmanager.model.event.EventStatus;
-import com.course.eventmanager.model.registration.Registration;
 import com.course.eventmanager.model.registration.RegistrationEntity;
 import com.course.eventmanager.model.user.Roles;
 import com.course.eventmanager.model.user.User;
@@ -17,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class RegistrationService {
@@ -35,7 +35,10 @@ public class RegistrationService {
 
     @Transactional
     public void registerUserAtEvent(Long eventId, User user) {
-        EventEntity eventEntity = eventRepository.findById(eventId)
+        // Пессимистичная блокировка строки события: пока эта транзакция не завершится,
+        // параллельные регистрации на тот же eventId подождут, и occupiedPlaces не сможет
+        // превысить maxPlaces из-за гонки между проверкой и сохранением.
+        EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
         if (eventEntity.getStatus() != EventStatus.WAIT_START) {
@@ -62,6 +65,12 @@ public class RegistrationService {
         eventEntity.setOccupiedPlaces(eventEntity.getOccupiedPlaces() + 1);
 
         eventRepository.save(eventEntity);
+    }
+
+    public List<Event> getUserRegisteredEvents(Long userId) {
+        return registrationRepository.findEventsByUserId(userId).stream()
+                .map(eventConverter::entityToDomain)
+                .toList();
     }
 
     public void cancelEvent(Long eventId, User currentUser) {

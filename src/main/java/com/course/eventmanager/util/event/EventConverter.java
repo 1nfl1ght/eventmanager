@@ -19,16 +19,6 @@ public class EventConverter {
         this.userConverter = userConverter;
     }
 
-    public Event dtoToDomain(EventDto eventDto) {
-        return Event.builder()
-                .name(eventDto.getName())
-                .startAt(eventDto.getStartAt())
-                .maxPlaces(eventDto.getMaxPlaces())
-                .duration(eventDto.getDuration())
-                .cost(eventDto.getCost())
-                .build();
-    }
-
     public EventDto domainToDto(Event event) {
         return new EventDto(
                 event.getId(),

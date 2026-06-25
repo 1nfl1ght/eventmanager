@@ -11,6 +11,7 @@ public class EventCreateRequest {
     @NotBlank
     private String name;
     @NotNull
+    @Min(1)
     private Integer maxPlaces;
     @NotNull
     private LocalDateTime date;

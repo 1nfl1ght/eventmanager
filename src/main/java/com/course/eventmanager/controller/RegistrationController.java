@@ -4,6 +4,7 @@ import com.course.eventmanager.model.event.EventDto;
 import com.course.eventmanager.model.user.User;
 import com.course.eventmanager.security.jwt.AuthenticationService;
 import com.course.eventmanager.service.RegistrationService;
+import com.course.eventmanager.util.event.EventConverter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,12 @@ public class RegistrationController {
 
     private final RegistrationService registrationService;
     private final AuthenticationService authenticationService;
+    private final EventConverter eventConverter;
 
-    public RegistrationController(RegistrationService registrationService, AuthenticationService authenticationService) {
+    public RegistrationController(RegistrationService registrationService, AuthenticationService authenticationService, EventConverter eventConverter) {
         this.registrationService = registrationService;
         this.authenticationService = authenticationService;
+        this.eventConverter = eventConverter;
     }
 
     @PostMapping("/{eventId}")
@@ -36,6 +39,9 @@ public class RegistrationController {
 
     @GetMapping("/my")
     public List<EventDto> getUserRegisteredEvents() {
-        return null;
+        User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
+        return registrationService.getUserRegisteredEvents(currentUser.getId()).stream()
+                .map(eventConverter::domainToDto)
+                .toList();
     }
 }
