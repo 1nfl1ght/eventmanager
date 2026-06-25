@@ -32,9 +32,9 @@ public class RegistrationController {
 
     @DeleteMapping("/cancel/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelEvent(@PathVariable("eventId") Long eventId) {
+    public void cancelRegistration(@PathVariable("eventId") Long eventId) {
         User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
-        registrationService.cancelEvent(eventId, currentUser);
+        registrationService.cancelRegistration(eventId, currentUser);
     }
 
     @GetMapping("/my")

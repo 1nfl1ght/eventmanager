@@ -58,18 +58,25 @@ public class EventService {
         return eventConverter.entityToDomain(savedEvent);
     }
 
+    @Transactional
     public void deleteEvent(Long eventId, User currentUser) {
 
-        Event event = eventConverter.entityToDomain(eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found")));
+        // По OpenAPI это "мягкое" удаление: строка не удаляется, статус меняется на CANCELLED,
+        // и только для мероприятий, которые еще не начались. Беру блокирующий findByIdForUpdate,
+        // чтобы отмена не разъехалась с параллельной регистрацией на то же мероприятие.
+        EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
-        if (!event.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
+        if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
             throw new AccessDeniedException("Access denied");
         }
 
-        if (!eventRepository.existsById(eventId)) {
-            throw new EntityNotFoundException("Event with id " + eventId + " not found");
+        if (eventEntity.getStatus() != EventStatus.WAIT_START) {
+            throw new IllegalStateException("Cannot cancel event with status " + eventEntity.getStatus());
         }
-        eventRepository.deleteById(eventId);
+
+        eventEntity.setStatus(EventStatus.CANCELLED);
+        eventRepository.save(eventEntity);
     }
 
     public Event getEventById(Long eventId) {

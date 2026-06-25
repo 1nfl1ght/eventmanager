@@ -4,7 +4,6 @@ import com.course.eventmanager.model.event.Event;
 import com.course.eventmanager.model.event.EventEntity;
 import com.course.eventmanager.model.event.EventStatus;
 import com.course.eventmanager.model.registration.RegistrationEntity;
-import com.course.eventmanager.model.user.Roles;
 import com.course.eventmanager.model.user.User;
 import com.course.eventmanager.repository.EventRepository;
 import com.course.eventmanager.repository.RegistrationRepository;
@@ -12,7 +11,6 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.user.UserConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -73,18 +71,25 @@ public class RegistrationService {
                 .toList();
     }
 
-    public void cancelEvent(Long eventId, User currentUser) {
-        EventEntity eventEntity = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
+    @Transactional
+    public void cancelRegistration(Long eventId, User currentUser) {
+        // Это отмена СВОЕЙ регистрации пользователем (DELETE /events/registrations/cancel/{eventId}),
+        // а не отмена самого мероприятия — для этого есть EventService.deleteEvent.
+        EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
-        if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
-            throw new AccessDeniedException("Access denied");
+        RegistrationEntity registrationEntity = eventEntity.getRegistrations().stream()
+                .filter(reg -> reg.getUser().getId().equals(currentUser.getId()))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("User " + currentUser.getId() + " is not registered for event " + eventId));
+
+        if (eventEntity.getStatus() != EventStatus.WAIT_START) {
+            throw new IllegalStateException("Cannot cancel registration for event with status " + eventEntity.getStatus());
         }
 
-        if (eventEntity.getStatus() == EventStatus.WAIT_START) {
-            eventEntity.setStatus(EventStatus.CANCELLED);
-        } else {
-            throw new IllegalStateException("Cannot cancel event with status " + eventEntity.getStatus());
-        }
+        eventEntity.removeRegistration(registrationEntity);
+        eventEntity.setOccupiedPlaces(eventEntity.getOccupiedPlaces() - 1);
+
         eventRepository.save(eventEntity);
     }
 }
