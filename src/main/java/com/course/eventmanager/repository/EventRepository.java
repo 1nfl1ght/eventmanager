@@ -37,4 +37,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM EventEntity e WHERE e.id = :id")
     Optional<EventEntity> findByIdForUpdate(@Param("id") Long id);
+
+    boolean existsByLocationId(Long locationId);
+
+    List<EventEntity> findAllByLocationIdAndStatusIn(Long locationId, List<EventStatus> statuses);
 }
