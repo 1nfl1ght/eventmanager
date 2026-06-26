@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Long> {
     @Query("SELECT e FROM EventEntity e LEFT JOIN FETCH e.owner LEFT JOIN FETCH e.location WHERE " +
-            "(:#{#request.name} IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :#{#request.name}, '%'))) AND " +
+            "(:#{#request.name} IS NULL OR LOWER(e.name) = LOWER(:#{#request.name})) AND " +
             "(:#{#request.placesMin} IS NULL OR e.maxPlaces >= :#{#request.placesMin}) AND " +
             "(:#{#request.placesMax} IS NULL OR e.maxPlaces <= :#{#request.placesMax}) AND " +
             "(:#{#request.dateStartAfter} IS NULL OR e.startAt >= :#{#request.dateStartAfter}) AND " +

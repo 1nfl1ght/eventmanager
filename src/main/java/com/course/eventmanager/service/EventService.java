@@ -42,6 +42,11 @@ public class EventService {
         Location location = locationEntityConverter.toDomain(locationRepository.findById(eventCreateRequest.getLocationId())
                 .orElseThrow(() -> new EntityNotFoundException("Location with id " +eventCreateRequest.getLocationId() + " not found")));
 
+        if (eventCreateRequest.getMaxPlaces() > location.getCapacity()) {
+            throw new IllegalArgumentException("Max places (" + eventCreateRequest.getMaxPlaces() +
+                    ") exceeds location capacity (" + location.getCapacity() + ")");
+        }
+
         Event event = Event.builder()
                 .name(eventCreateRequest.getName())
                 .maxPlaces(eventCreateRequest.getMaxPlaces())
@@ -109,6 +114,15 @@ public class EventService {
 
         LocationEntity location = locationRepository.findById(eventUpdateRequest.getLocationId())
                 .orElseThrow(() -> new EntityNotFoundException("Location with id " + eventUpdateRequest.getLocationId() + " not found"));
+
+        if (eventUpdateRequest.getMaxPlaces() > location.getCapacity()) {
+            throw new IllegalArgumentException("Max places (" + eventUpdateRequest.getMaxPlaces() +
+                    ") exceeds location capacity (" + location.getCapacity() + ")");
+        }
+        if (eventUpdateRequest.getMaxPlaces() < eventEntity.getOccupiedPlaces()) {
+            throw new IllegalArgumentException("Max places (" + eventUpdateRequest.getMaxPlaces() +
+                    ") cannot be less than already occupied places (" + eventEntity.getOccupiedPlaces() + ")");
+        }
 
         eventEntity.setName(eventUpdateRequest.getName());
         eventEntity.setMaxPlaces(eventUpdateRequest.getMaxPlaces());
