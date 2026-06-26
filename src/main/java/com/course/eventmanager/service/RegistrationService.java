@@ -33,9 +33,6 @@ public class RegistrationService {
 
     @Transactional
     public void registerUserAtEvent(Long eventId, User user) {
-        // Пессимистичная блокировка строки события: пока эта транзакция не завершится,
-        // параллельные регистрации на тот же eventId подождут, и occupiedPlaces не сможет
-        // превысить maxPlaces из-за гонки между проверкой и сохранением.
         EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
@@ -73,8 +70,7 @@ public class RegistrationService {
 
     @Transactional
     public void cancelRegistration(Long eventId, User currentUser) {
-        // Это отмена СВОЕЙ регистрации пользователем (DELETE /events/registrations/cancel/{eventId}),
-        // а не отмена самого мероприятия — для этого есть EventService.deleteEvent.
+
         EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 

@@ -55,10 +55,6 @@ public class LocationService {
 
     @Transactional
     public Location updateLocation(Long id, Location locationToUpdate) {
-        // Загружаем управляемую (managed) сущность и правим её поля напрямую, а не пересобираем
-        // новый LocationEntity через конвертер. У нового объекта events была бы пустым списком
-        // по умолчанию, и save()/merge() с orphanRemoval=true на этой коллекции удалил бы
-        // ВСЕ существующие события этой локации.
         LocationEntity locationEntity = locationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Location with id %d not found", id)));
 

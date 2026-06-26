@@ -65,10 +65,6 @@ public class EventService {
 
     @Transactional
     public void deleteEvent(Long eventId, User currentUser) {
-
-        // По OpenAPI это "мягкое" удаление: строка не удаляется, статус меняется на CANCELLED,
-        // и только для мероприятий, которые еще не начались. Беру блокирующий findByIdForUpdate,
-        // чтобы отмена не разъехалась с параллельной регистрацией на то же мероприятие.
         EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
