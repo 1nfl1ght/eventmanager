@@ -3,7 +3,6 @@ package com.course.eventmanager.service;
 import com.course.eventmanager.model.event.*;
 import com.course.eventmanager.model.location.Location;
 import com.course.eventmanager.model.location.LocationEntity;
-import com.course.eventmanager.model.user.Roles;
 import com.course.eventmanager.model.user.User;
 import com.course.eventmanager.repository.EventRepository;
 import com.course.eventmanager.repository.LocationRepository;
@@ -11,7 +10,6 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.location.LocationEntityConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,12 +22,14 @@ public class EventService {
     private final LocationRepository locationRepository;
     private final LocationEntityConverter locationEntityConverter;
     private final EventConverter eventConverter;
+    private final PermissionService permissionService;
 
-    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter) {
+    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter, PermissionService permissionService) {
         this.eventRepository = eventRepository;
         this.locationRepository = locationRepository;
         this.locationEntityConverter = locationEntityConverter;
         this.eventConverter = eventConverter;
+        this.permissionService = permissionService;
     }
 
     @Transactional
@@ -72,9 +72,7 @@ public class EventService {
         EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
-        if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
-            throw new AccessDeniedException("Access denied");
-        }
+        permissionService.checkOwnerOrAdmin(eventEntity.getOwner().getId(), currentUser);
 
         if (eventEntity.getStatus() != EventStatus.WAIT_START) {
             throw new IllegalStateException("Cannot cancel event with status " + eventEntity.getStatus());
@@ -108,9 +106,7 @@ public class EventService {
         EventEntity eventEntity = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
-        if (!eventEntity.getOwner().getId().equals(currentUser.getId()) && !currentUser.getRole().equals(Roles.ADMIN)) {
-            throw new AccessDeniedException("Access denied");
-        }
+        permissionService.checkOwnerOrAdmin(eventEntity.getOwner().getId(), currentUser);
 
         LocationEntity location = locationRepository.findById(eventUpdateRequest.getLocationId())
                 .orElseThrow(() -> new EntityNotFoundException("Location with id " + eventUpdateRequest.getLocationId() + " not found"));
