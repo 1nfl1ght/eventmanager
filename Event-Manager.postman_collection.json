@@ -1,0 +1,457 @@
+{
+  "info": {
+    "_postman_id": "ce6bf8c8-33f5-47bf-830a-c402f86be22a",
+    "name": "Event Manager API",
+    "description": "Коллекция для ручного тестирования REST API проекта eventmanager (Spring Boot, JWT-аутентификация). Порядок папок продуман для последовательного прогона: Auth -> Locations -> Events -> Registrations -> Cleanup. По умолчанию сервер слушает http://localhost:8080.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "userToken", "value": "", "type": "string" },
+    { "key": "userId", "value": "1", "type": "string" },
+    { "key": "locationId", "value": "", "type": "string" },
+    { "key": "eventId", "value": "", "type": "string" },
+    { "key": "futureEventDate", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register new user",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"testuser1\",\n  \"password\": \"password123\",\n  \"age\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Публичная регистрация. Новый пользователь всегда получает роль USER (см. UserService.registerUser). login и password должны быть не короче 5 символов."
+          },
+          "response": []
+        },
+        {
+          "name": "Login as admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jwt = pm.response.json().jwt;",
+                  "pm.collectionVariables.set('adminToken', jwt);",
+                  "pm.collectionVariables.set('token', jwt);",
+                  "pm.test('JWT получен', function () { pm.expect(jwt).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "auth"]
+            },
+            "description": "Логин под учётку admin/admin, которую DefaultUserInitializer создаёт автоматически при старте приложения. Токен сохраняется в {{adminToken}} и {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Login as user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jwt = pm.response.json().jwt;",
+                  "pm.collectionVariables.set('userToken', jwt);",
+                  "pm.collectionVariables.set('token', jwt);",
+                  "pm.test('JWT получен', function () { pm.expect(jwt).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"user\",\n  \"password\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "auth"]
+            },
+            "description": "Логин под учётку user/user (тоже создаётся DefaultUserInitializer). Токен сохраняется в {{userToken}} и {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Эндпоинт не имеет отдельного матчера в SecurityConfiguration, поэтому требует просто валидный токен (любая роль) — попадает под anyRequest().authenticated()."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Locations",
+      "item": [
+        {
+          "name": "Get all locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            },
+            "description": "Доступно ADMIN и USER."
+          },
+          "response": []
+        },
+        {
+          "name": "Create location",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('locationId', pm.response.json().id);",
+                  "}",
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Conference Hall A\",\n  \"address\": \"123 Main St, Springfield\",\n  \"capacity\": 100,\n  \"description\": \"Large conference hall with stage and seating\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            },
+            "description": "Только ADMIN. capacity не может быть меньше 5. Id созданной локации сохраняется в {{locationId}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Get location by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update location",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Conference Hall A (Renovated)\",\n  \"address\": \"123 Main St, Springfield\",\n  \"capacity\": 150,\n  \"description\": \"Renovated with new sound system\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
+            },
+            "description": "Только ADMIN. Если попытаться занизить capacity ниже maxPlaces уже запланированных мероприятий — вернётся 400 (новая проверка из пункта 5)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Events",
+      "item": [
+        {
+          "name": "Create event",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const future = new Date();",
+                  "future.setDate(future.getDate() + 30);",
+                  "pm.collectionVariables.set('futureEventDate', future.toISOString().slice(0, 19));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set('eventId', pm.response.json().id);",
+                  "}",
+                  "pm.test('201 Created', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring Tech Conference\",\n  \"maxPlaces\": 50,\n  \"date\": \"{{futureEventDate}}\",\n  \"cost\": 1500.00,\n  \"duration\": 120,\n  \"locationId\": {{locationId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"]
+            },
+            "description": "Создавать мероприятия может только USER (он становится owner). Дата генерируется prerequest-скриптом (+30 дней от текущей), чтобы проверка 'дата в будущем' проходила всегда. maxPlaces не может превышать capacity локации (пункт 4). Id созданного события сохраняется в {{eventId}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Get event by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search events (exact name match)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring Tech Conference\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "search"]
+            },
+            "description": "Все поля запроса опциональны. После фикса (пункт 3) поиск по name — точное совпадение без учёта регистра, а не подстрока. Можно дополнительно передать placesMin/placesMax, costMin/costMax, durationMin/durationMax, dateStartAfter/dateStartBefore, locationId, eventStatus (WAIT_START | STARTED | CANCELLED | FINISHED)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update event",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Spring Tech Conference (Updated)\",\n  \"maxPlaces\": 60,\n  \"date\": \"{{futureEventDate}}\",\n  \"cost\": 1800.00,\n  \"duration\": 150,\n  \"locationId\": {{locationId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}"]
+            },
+            "description": "Менять может только owner или ADMIN (PermissionService.checkOwnerOrAdmin). maxPlaces не может быть больше capacity локации и не может быть меньше occupiedPlaces (пункт 4)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get my created events",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "my"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Registrations",
+      "item": [
+        {
+          "name": "Register for event",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/registrations/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "registrations", "{{eventId}}"]
+            },
+            "description": "Только USER. Если использовать тот же токен, что создавал событие, это будет регистрация владельца на собственное мероприятие — допустимо, бизнес-логика это не блокирует. Для чистого теста удобнее зарегистрировать второго пользователя (создать через 'Register new user' и залогинить отдельно)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get my registered events",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/registrations/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "registrations", "my"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel registration",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/registrations/cancel/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "registrations", "cancel", "{{eventId}}"]
+            },
+            "description": "Только USER, и только пока мероприятие в статусе WAIT_START. Возвращает 204 No Content."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Cleanup",
+      "item": [
+        {
+          "name": "Cancel (soft-delete) event",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{userToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}"]
+            },
+            "description": "Это 'мягкое' удаление: статус меняется на CANCELLED, строка не удаляется из БД. Доступно owner'у или ADMIN. Возвращает 204 No Content. Возможно только для мероприятий со статусом WAIT_START."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete location (expected 400 - event still references it)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
+            },
+            "description": "Демонстрация фикса из пункта 5: даже после отмены мероприятия его строка остаётся в БД (CANCELLED, не удалена), поэтому eventRepository.existsByLocationId(id) всё ещё true, и удаление локации должно вернуть 400 'Cannot delete location ... there are events associated with it'. Чтобы увидеть 204, нужно сначала удалить/не создавать связанные события."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

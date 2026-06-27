@@ -32,7 +32,7 @@ public class AuthenticationService {
     public User getCurrentAuthenticationOrThrow() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
-            throw new IllegalArgumentException("Authentication not present");
+            throw new IllegalStateException("Authentication not present");
         }
         return (User) authentication.getPrincipal();
     }

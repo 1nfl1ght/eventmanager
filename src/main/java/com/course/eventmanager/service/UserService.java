@@ -26,7 +26,7 @@ public class UserService {
 
     public User registerUser(SignUpRequest signUpRequest) {
         if (userRepository.existsByLogin(signUpRequest.getLogin())) {
-            throw new IllegalArgumentException("Username already taken");
+            throw new IllegalStateException("Username already taken");
         }
         java.lang.String hashedPassword = passwordEncoder.encode(signUpRequest.getPassword());
         UserEntity userToSave = new UserEntity(

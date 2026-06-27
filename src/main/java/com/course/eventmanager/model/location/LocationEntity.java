@@ -1,6 +1,10 @@
 package com.course.eventmanager.model.location;
 
+import com.course.eventmanager.model.event.EventEntity;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "locations")
@@ -16,6 +20,19 @@ public class LocationEntity {
     private Integer capacity;
     @Column(name = "description")
     private String description;
+
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EventEntity> events = new ArrayList<>();
+
+    private void addEvent(EventEntity event) {
+        events.add(event);
+        event.setLocation(this);
+    }
+
+    public void removeEvent(EventEntity event) {
+        events.remove(event);
+        event.setLocation(null);
+    }
 
     public LocationEntity() {
     }
