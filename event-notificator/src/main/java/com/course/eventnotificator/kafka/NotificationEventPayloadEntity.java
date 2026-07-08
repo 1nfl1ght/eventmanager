@@ -28,4 +28,68 @@ public class NotificationEventPayloadEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private EventChangePayload payload;
+
+    public Long getPayloadId() {
+        return payloadId;
+    }
+
+    public void setPayloadId(Long payloadId) {
+        this.payloadId = payloadId;
+    }
+
+    public UUID getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(UUID messageId) {
+        this.messageId = messageId;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
+    }
+
+    public LocalDateTime getOccurredAt() {
+        return occurredAt;
+    }
+
+    public void setOccurredAt(LocalDateTime occurredAt) {
+        this.occurredAt = occurredAt;
+    }
+
+    public Long getChangeById() {
+        return changeById;
+    }
+
+    public void setChangeById(Long changeById) {
+        this.changeById = changeById;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public EventChangePayload getPayload() {
+        return payload;
+    }
+
+    public void setPayload(EventChangePayload payload) {
+        this.payload = payload;
+    }
 }

@@ -3,10 +3,11 @@ package com.course.eventnotificator.security.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
 
+@Component
 public class JwtTokenManager {
 
     private final SecretKey secretKey;
@@ -25,6 +26,26 @@ public class JwtTokenManager {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public String getRoleFromToken(String token) {
+        return Jwts
+                .parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role", String.class);
+    }
+
+    public Long getUserIdFromToken(String token) {
+        return Jwts
+                .parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", Long.class);
     }
 
 }

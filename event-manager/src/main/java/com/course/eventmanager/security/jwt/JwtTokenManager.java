@@ -1,5 +1,6 @@
 package com.course.eventmanager.security.jwt;
 
+import com.course.eventmanager.model.user.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +23,12 @@ public class JwtTokenManager {
         this.expirationTime = expirationTime;
     }
 
-    public String generateToken(String login) {
+    public String generateToken(User user) {
         return Jwts
                 .builder()
-                .subject(login)
+                .subject(user.getLogin())
+                .claim("userId", user.getId())
+                .claim("role", user.getRole())
                 .signWith(secretKey)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))

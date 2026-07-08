@@ -1,5 +1,6 @@
 package com.course.eventnotificator.security.jwt;
 
+import com.course.eventnotificator.security.AuthenticatedUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,18 +40,24 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String jwtToken = authorizationHeader.substring(7);
 
         String loginFromToken;
+        Long userIdFromToken;
+        String roleFromToken;
         try {
             loginFromToken = jwtTokenManager.getLoginFromToken(jwtToken);
+            userIdFromToken = jwtTokenManager.getUserIdFromToken(jwtToken);
+            roleFromToken = jwtTokenManager.getRoleFromToken(jwtToken);
         } catch (Exception e) {
             logger.error("Error while reading jwt", e);
             filterChain.doFilter(request, response);
             return;
         }
 
+        AuthenticatedUser user = new AuthenticatedUser(userIdFromToken, roleFromToken, loginFromToken);
+
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                 user,
                 null,
-                List.of(new SimpleGrantedAuthority(user.getRole().toString()))
+                List.of(new SimpleGrantedAuthority(roleFromToken))
         );
         SecurityContextHolder.getContext().setAuthentication(token);
         filterChain.doFilter(request, response);
