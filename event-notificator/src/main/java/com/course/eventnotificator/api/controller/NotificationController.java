@@ -27,8 +27,8 @@ public class NotificationController {
     }
 
     @PostMapping
-    public void readNotifications() {
+    public void readNotifications(@RequestBody List<Long> notifications) {
         AuthenticatedUser user = authenticationService.getCurrentAuthenticationOrThrow();
-        service.readNotifications(user.getUserId());
+        service.readNotifications(user.getUserId(), notifications);
     }
 }

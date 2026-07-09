@@ -22,7 +22,8 @@ public class NotificationEventPayloadEntity {
     private Long eventId;
     @Column(name = "occurred_at")
     private LocalDateTime occurredAt;
-    private Long changeById;
+    @Column(name = "changed_by_id")
+    private Long changedById;
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
     @JdbcTypeCode(SqlTypes.JSON)
@@ -69,12 +70,12 @@ public class NotificationEventPayloadEntity {
         this.occurredAt = occurredAt;
     }
 
-    public Long getChangeById() {
-        return changeById;
+    public Long getChangedById() {
+        return changedById;
     }
 
-    public void setChangeById(Long changeById) {
-        this.changeById = changeById;
+    public void setChangedById(Long changedById) {
+        this.changedById = changedById;
     }
 
     public Long getOwnerId() {
