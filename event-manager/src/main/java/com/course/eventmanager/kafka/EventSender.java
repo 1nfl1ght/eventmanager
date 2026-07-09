@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class EventSender {
@@ -21,6 +21,11 @@ public class EventSender {
     public EventSender(@Value("${app.kafka.topic.domain-events}") String topic, KafkaTemplate<Long, EventMessage> kafkaTemplate) {
         this.topic = topic;
         this.kafkaTemplate = kafkaTemplate;
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onEventCommitted(EventMessage eventMessage) {
+        sendEvent(eventMessage);
     }
 
     public void sendEvent(EventMessage eventMessage) {

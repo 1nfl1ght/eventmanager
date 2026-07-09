@@ -4,7 +4,6 @@ import com.course.eventcommon.event.EventStatus;
 import com.course.eventcommon.kafka.Change;
 import com.course.eventcommon.kafka.EventMessage;
 import com.course.eventcommon.kafka.KafkaEventType;
-import com.course.eventmanager.kafka.EventSender;
 import com.course.eventmanager.model.event.*;
 import com.course.eventmanager.model.location.Location;
 import com.course.eventmanager.model.location.LocationEntity;
@@ -15,6 +14,7 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.location.LocationEntityConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,15 +30,15 @@ public class EventService {
     private final LocationEntityConverter locationEntityConverter;
     private final EventConverter eventConverter;
     private final PermissionService permissionService;
-    private final EventSender eventSender;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter, PermissionService permissionService, EventSender eventSender) {
+    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter, PermissionService permissionService, ApplicationEventPublisher applicationEventPublisher) {
         this.eventRepository = eventRepository;
         this.locationRepository = locationRepository;
         this.locationEntityConverter = locationEntityConverter;
         this.eventConverter = eventConverter;
         this.permissionService = permissionService;
-        this.eventSender = eventSender;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional
@@ -99,7 +99,7 @@ public class EventService {
         eventEntity.setStatus(EventStatus.CANCELLED);
         eventMessage.getChanges().getFirst().setNewValue(eventEntity.getStatus().name());
         eventRepository.save(eventEntity);
-        eventSender.sendEvent(eventMessage);
+        applicationEventPublisher.publishEvent(eventMessage);
     }
 
     public Event getEventById(Long eventId) {
