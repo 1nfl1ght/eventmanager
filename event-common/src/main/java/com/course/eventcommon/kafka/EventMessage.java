@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public class EventMessage {
     private UUID messageId;
-    private String eventType;
+    private KafkaEventType eventType;
     private Long eventId;
     private String eventName;
     private LocalDateTime occurredAt;
@@ -18,7 +18,7 @@ public class EventMessage {
     public EventMessage() {
     }
 
-    public EventMessage(UUID messageId, String eventType, Long eventId, String eventName, LocalDateTime occurredAt, Long ownerId, Long changedById, List<Long> subscribers, List<Change> changes) {
+    public EventMessage(UUID messageId, KafkaEventType eventType, Long eventId, String eventName, LocalDateTime occurredAt, Long ownerId, Long changedById, List<Long> subscribers, List<Change> changes) {
         this.messageId = messageId;
         this.eventType = eventType;
         this.eventId = eventId;
@@ -38,11 +38,11 @@ public class EventMessage {
         this.messageId = messageId;
     }
 
-    public String getEventType() {
+    public KafkaEventType getEventType() {
         return eventType;
     }
 
-    public void setEventType(String eventType) {
+    public void setEventType(KafkaEventType eventType) {
         this.eventType = eventType;
     }
 

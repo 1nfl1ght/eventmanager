@@ -12,7 +12,7 @@ public class NotificationConverter {
         NotificationEventPayloadEntity payload = entity.getPayloadId();
         return new UnreadNotificationDto(
                 entity.getNotificationId(),
-                payload.getEventType(),
+                payload.getEventType().name(),
                 payload.getEventId(),
                 entity.getCreatedAt(),
                 entity.getRead(),

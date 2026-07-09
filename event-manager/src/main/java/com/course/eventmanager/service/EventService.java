@@ -1,6 +1,10 @@
 package com.course.eventmanager.service;
 
 import com.course.eventcommon.event.EventStatus;
+import com.course.eventcommon.kafka.Change;
+import com.course.eventcommon.kafka.EventMessage;
+import com.course.eventcommon.kafka.KafkaEventType;
+import com.course.eventmanager.kafka.EventSender;
 import com.course.eventmanager.model.event.*;
 import com.course.eventmanager.model.location.Location;
 import com.course.eventmanager.model.location.LocationEntity;
@@ -14,7 +18,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class EventService {
@@ -24,13 +30,15 @@ public class EventService {
     private final LocationEntityConverter locationEntityConverter;
     private final EventConverter eventConverter;
     private final PermissionService permissionService;
+    private final EventSender eventSender;
 
-    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter, PermissionService permissionService) {
+    public EventService(EventRepository eventRepository, LocationRepository locationRepository, LocationEntityConverter locationEntityConverter, EventConverter eventConverter, PermissionService permissionService, EventSender eventSender) {
         this.eventRepository = eventRepository;
         this.locationRepository = locationRepository;
         this.locationEntityConverter = locationEntityConverter;
         this.eventConverter = eventConverter;
         this.permissionService = permissionService;
+        this.eventSender = eventSender;
     }
 
     @Transactional
@@ -66,6 +74,7 @@ public class EventService {
 
     @Transactional
     public void deleteEvent(Long eventId, User currentUser) {
+        EventMessage eventMessage = new EventMessage();
         EventEntity eventEntity = eventRepository.findByIdForUpdate(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
@@ -74,9 +83,23 @@ public class EventService {
         if (eventEntity.getStatus() != EventStatus.WAIT_START) {
             throw new IllegalStateException("Cannot cancel event with status " + eventEntity.getStatus());
         }
-
+        eventMessage.setEventId(eventId);
+        eventMessage.setEventType(KafkaEventType.CANCELLED);
+        eventMessage.setEventName(eventEntity.getName());
+        eventMessage.setMessageId(UUID.randomUUID());
+        eventMessage.setChangedById(currentUser.getId());
+        eventMessage.setOccurredAt(LocalDateTime.now());
+        eventMessage.setOwnerId(eventEntity.getOwner().getId());
+        eventMessage.setSubscribers(eventEntity.getRegistrations().stream().map(e -> e.getUser().getId()).toList());
+        eventMessage.getSubscribers().add(eventEntity.getOwner().getId());
+        eventMessage.setChanges(new ArrayList<>());
+        eventMessage.getChanges().add(new Change());
+        eventMessage.getChanges().getFirst().setField("status");
+        eventMessage.getChanges().getFirst().setOldValue(eventEntity.getStatus().name());
         eventEntity.setStatus(EventStatus.CANCELLED);
+        eventMessage.getChanges().getFirst().setNewValue(eventEntity.getStatus().name());
         eventRepository.save(eventEntity);
+        eventSender.sendEvent(eventMessage);
     }
 
     public Event getEventById(Long eventId) {

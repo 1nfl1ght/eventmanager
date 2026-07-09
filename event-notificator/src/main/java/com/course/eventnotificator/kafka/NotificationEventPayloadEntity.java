@@ -1,5 +1,6 @@
 package com.course.eventnotificator.kafka;
 
+import com.course.eventcommon.kafka.KafkaEventType;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -17,7 +18,8 @@ public class NotificationEventPayloadEntity {
     @Column(name = "messageId")
     private UUID messageId;
     @Column(name = "event_type")
-    private String eventType;
+    @Enumerated(EnumType.STRING)
+    private KafkaEventType eventType;
     @Column(name = "event_id")
     private Long eventId;
     @Column(name = "occurred_at")
@@ -46,11 +48,11 @@ public class NotificationEventPayloadEntity {
         this.messageId = messageId;
     }
 
-    public String getEventType() {
+    public KafkaEventType getEventType() {
         return eventType;
     }
 
-    public void setEventType(String eventType) {
+    public void setEventType(KafkaEventType eventType) {
         this.eventType = eventType;
     }
 
