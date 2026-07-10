@@ -2,6 +2,7 @@ package com.course.eventmanager.security.jwt;
 
 import com.course.eventmanager.model.user.SignInRequest;
 import com.course.eventmanager.model.user.User;
+import com.course.eventmanager.service.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,10 +14,12 @@ public class AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenManager jwtTokenManager;
+    private final UserService userService;
 
-    public AuthenticationService(AuthenticationManager authenticationManager, JwtTokenManager jwtTokenManager) {
+    public AuthenticationService(AuthenticationManager authenticationManager, JwtTokenManager jwtTokenManager, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenManager = jwtTokenManager;
+        this.userService = userService;
     }
 
     public String authenticateUser(SignInRequest signInRequest) {
@@ -26,7 +29,8 @@ public class AuthenticationService {
                         signInRequest.getPassword()
                 )
         );
-        return jwtTokenManager.generateToken(signInRequest.getLogin());
+        User user = userService.findByLogin(signInRequest.getLogin());
+        return jwtTokenManager.generateToken(user);
     }
 
     public User getCurrentAuthenticationOrThrow() {
