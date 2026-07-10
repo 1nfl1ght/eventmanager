@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class EventService {
@@ -93,8 +94,11 @@ public class EventService {
         eventMessage.setChangedById(currentUser.getId());
         eventMessage.setOccurredAt(LocalDateTime.now());
         eventMessage.setOwnerId(eventEntity.getOwner().getId());
-        eventMessage.setSubscribers(eventEntity.getRegistrations().stream().map(e -> e.getUser().getId()).collect(Collectors.toCollection(ArrayList::new)));
-        eventMessage.getSubscribers().add(eventEntity.getOwner().getId());
+        eventMessage.setSubscribers(Stream.concat(
+                        eventEntity.getRegistrations().stream().map(e -> e.getUser().getId()),
+                        Stream.of(eventEntity.getOwner().getId()))
+                .distinct()
+                .collect(Collectors.toCollection(ArrayList::new)));
         eventMessage.setChanges(new ArrayList<>());
         eventMessage.getChanges().add(new Change());
         eventMessage.getChanges().getFirst().setField("status");
@@ -167,8 +171,11 @@ public class EventService {
             eventMessage.setEventName(savedEvent.getName());
             eventMessage.setOccurredAt(LocalDateTime.now());
             eventMessage.setOwnerId(savedEvent.getOwner().getId());
-            eventMessage.setSubscribers(savedEvent.getRegistrations().stream().map(e -> e.getUser().getId()).collect(Collectors.toCollection(ArrayList::new)));
-            eventMessage.getSubscribers().add(savedEvent.getOwner().getId());
+            eventMessage.setSubscribers(Stream.concat(
+                            savedEvent.getRegistrations().stream().map(e -> e.getUser().getId()),
+                            Stream.of(savedEvent.getOwner().getId()))
+                    .distinct()
+                    .collect(Collectors.toCollection(ArrayList::new)));
             eventMessage.setChanges(changes);
             applicationEventPublisher.publishEvent(eventMessage);
         }

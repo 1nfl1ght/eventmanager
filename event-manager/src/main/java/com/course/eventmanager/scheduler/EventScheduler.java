@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class EventScheduler {
@@ -63,10 +64,11 @@ public class EventScheduler {
         change.setOldValue(oldStatus.name());
         change.setNewValue(newStatus.name());
 
-        List<Long> subscribers = event.getRegistrations().stream()
-                .map(registration -> registration.getUser().getId())
+        List<Long> subscribers = Stream.concat(
+                        event.getRegistrations().stream().map(registration -> registration.getUser().getId()),
+                        Stream.of(event.getOwner().getId()))
+                .distinct()
                 .collect(Collectors.toCollection(ArrayList::new));
-        subscribers.add(event.getOwner().getId());
 
         List<Change> changes = new ArrayList<>();
         changes.add(change);
