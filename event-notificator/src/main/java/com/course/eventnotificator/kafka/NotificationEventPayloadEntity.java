@@ -15,7 +15,7 @@ public class NotificationEventPayloadEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payload_id")
     private Long payloadId;
-    @Column(name = "messageId")
+    @Column(name = "messageId", unique = true)
     private UUID messageId;
     @Column(name = "event_type")
     @Enumerated(EnumType.STRING)

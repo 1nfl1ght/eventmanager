@@ -16,8 +16,22 @@ public class NotificationConverter {
                 payload.getEventId(),
                 entity.getCreatedAt(),
                 entity.getRead(),
-                null, // TODO: источник message в модели пока не определён — заполнить, когда решишь, откуда его брать
+                buildMessage(payload),
                 payload.getPayload()
         );
+    }
+
+    private String buildMessage(NotificationEventPayloadEntity payload) {
+        String action = switch (payload.getEventType()) {
+            case CREATED -> "создано";
+            case UPDATED -> "изменено";
+            case CANCELLED -> "отменено";
+            case REMOVED -> "удалено";
+        };
+        String eventName = payload.getPayload() != null ? payload.getPayload().getEventName() : null;
+        if (eventName == null) {
+            return "Мероприятие " + action;
+        }
+        return "Мероприятие \"" + eventName + "\" " + action;
     }
 }
