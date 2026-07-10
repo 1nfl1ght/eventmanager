@@ -17,10 +17,13 @@ import jakarta.transaction.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -90,7 +93,7 @@ public class EventService {
         eventMessage.setChangedById(currentUser.getId());
         eventMessage.setOccurredAt(LocalDateTime.now());
         eventMessage.setOwnerId(eventEntity.getOwner().getId());
-        eventMessage.setSubscribers(eventEntity.getRegistrations().stream().map(e -> e.getUser().getId()).toList());
+        eventMessage.setSubscribers(eventEntity.getRegistrations().stream().map(e -> e.getUser().getId()).collect(Collectors.toCollection(ArrayList::new)));
         eventMessage.getSubscribers().add(eventEntity.getOwner().getId());
         eventMessage.setChanges(new ArrayList<>());
         eventMessage.getChanges().add(new Change());
@@ -122,7 +125,6 @@ public class EventService {
 
     @Transactional
     public Event updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, User currentUser) {
-
         EventEntity eventEntity = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"));
 
@@ -140,14 +142,52 @@ public class EventService {
                     ") cannot be less than already occupied places (" + eventEntity.getOccupiedPlaces() + ")");
         }
 
+        List<Change> changes = new ArrayList<>();
+        addChange(changes, "name", eventEntity.getName(), eventUpdateRequest.getName());
+        addChange(changes, "maxPlaces", eventEntity.getMaxPlaces(), eventUpdateRequest.getMaxPlaces());
+        addChange(changes, "date", eventEntity.getStartAt(), eventUpdateRequest.getDate());
+        addChange(changes, "cost", eventEntity.getCost(), eventUpdateRequest.getCost());
+        addChange(changes, "duration", eventEntity.getDuration(), eventUpdateRequest.getDuration());
+        addChange(changes, "location", eventEntity.getLocation().getId(), location.getId());
+
         eventEntity.setName(eventUpdateRequest.getName());
         eventEntity.setMaxPlaces(eventUpdateRequest.getMaxPlaces());
         eventEntity.setStartAt(eventUpdateRequest.getDate());
         eventEntity.setCost(eventUpdateRequest.getCost());
         eventEntity.setDuration(eventUpdateRequest.getDuration());
         eventEntity.setLocation(location);
-
         EventEntity savedEvent = eventRepository.save(eventEntity);
+
+        if (!changes.isEmpty()) {
+            EventMessage eventMessage = new EventMessage();
+            eventMessage.setMessageId(UUID.randomUUID());
+            eventMessage.setChangedById(currentUser.getId());
+            eventMessage.setEventId(savedEvent.getId());
+            eventMessage.setEventType(KafkaEventType.UPDATED);
+            eventMessage.setEventName(savedEvent.getName());
+            eventMessage.setOccurredAt(LocalDateTime.now());
+            eventMessage.setOwnerId(savedEvent.getOwner().getId());
+            eventMessage.setSubscribers(savedEvent.getRegistrations().stream().map(e -> e.getUser().getId()).collect(Collectors.toCollection(ArrayList::new)));
+            eventMessage.getSubscribers().add(savedEvent.getOwner().getId());
+            eventMessage.setChanges(changes);
+            applicationEventPublisher.publishEvent(eventMessage);
+        }
         return eventConverter.entityToDomain(savedEvent);
+    }
+
+    private void addChange(List<Change> changes, String field, Object oldValue, Object newValue) {
+        boolean changed;
+        if (oldValue instanceof BigDecimal oldNumber && newValue instanceof BigDecimal newNumber) {
+            changed = oldNumber.compareTo(newNumber) != 0;
+        } else {
+            changed = !Objects.equals(oldValue, newValue);
+        }
+        if (changed) {
+            Change change = new Change();
+            change.setField(field);
+            change.setOldValue(oldValue == null ? null : String.valueOf(oldValue));
+            change.setNewValue(newValue == null ? null : String.valueOf(newValue));
+            changes.add(change);
+        }
     }
 }
