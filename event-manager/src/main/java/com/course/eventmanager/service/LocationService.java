@@ -9,6 +9,10 @@ import com.course.eventmanager.repository.LocationRepository;
 import com.course.eventmanager.util.location.LocationEntityConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +30,7 @@ public class LocationService {
         this.locationEntityConverter = locationEntityConverter;
     }
 
+    @Cacheable("locations")
     public List<Location> getAllLocations() {
         List<LocationEntity> locations = locationRepository.findAll();
         return locations.stream()
@@ -33,15 +38,23 @@ public class LocationService {
                 .toList();
     }
 
+    @Cacheable(
+            value = "locationById",
+            key = "#id")
     public Location getLocationById(Long id) {
         return locationEntityConverter.toDomain(locationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Location with id %d not found", id))));
     }
 
+    @CacheEvict(value = "locations", allEntries = true)
     public Location createLocation(Location location) {
         return locationEntityConverter.toDomain(locationRepository.save(locationEntityConverter.toEntity(location)));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "locations", allEntries = true),
+            @CacheEvict(value = "locationById", key = "#id", beforeInvocation = false)
+    })
     @Transactional
     public void deleteLocationById(Long id) {
         if (!locationRepository.existsById(id)) {
@@ -53,6 +66,10 @@ public class LocationService {
         locationRepository.deleteById(id);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "locations", allEntries = true),
+            @CacheEvict(value = "locationById", key = "#id")
+    })
     @Transactional
     public Location updateLocation(Long id, Location locationToUpdate) {
         LocationEntity locationEntity = locationRepository.findById(id)

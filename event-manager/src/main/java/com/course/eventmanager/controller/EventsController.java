@@ -9,6 +9,9 @@ import com.course.eventmanager.security.jwt.AuthenticationService;
 import com.course.eventmanager.service.EventService;
 import com.course.eventmanager.util.event.EventConverter;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +39,7 @@ public class EventsController {
         return eventConverter.domainToDto(eventService.createEvent(eventCreateRequest, owner));
     }
 
+    @CacheEvict(value = "eventById", key = "#eventId")
     @DeleteMapping("/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEvent(@PathVariable("eventId") Long eventId) {
@@ -43,11 +47,13 @@ public class EventsController {
         eventService.deleteEvent(eventId, currentUser);
     }
 
+    @Cacheable(value = "eventById", key = "#eventId")
     @GetMapping("/{eventId}")
     public EventDto getEvent(@PathVariable("eventId") Long eventId) {
         return eventConverter.domainToDto(eventService.getEventById(eventId));
     }
 
+    @CacheEvict(value = "eventById", key = "#eventId")
     @PutMapping("/{eventId}")
     public EventDto updateEvent(@PathVariable("eventId") Long eventId, @RequestBody @Valid EventUpdateRequest eventUpdateRequest) {
         User currentUser = authenticationService.getCurrentAuthenticationOrThrow();
