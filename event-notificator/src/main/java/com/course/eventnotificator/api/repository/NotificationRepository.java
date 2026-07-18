@@ -19,4 +19,6 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     @Modifying
     @Query("delete from NotificationEntity n where n.createdAt < :threshold")
     int deleteOlderThan(LocalDateTime threshold);
+
+    Integer countByUserIdAndIsReadFalse(Long userId);
 }
