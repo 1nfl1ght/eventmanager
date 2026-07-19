@@ -10,7 +10,6 @@ import com.course.eventmanager.service.EventService;
 import com.course.eventmanager.util.event.EventConverter;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,7 +44,7 @@ public class EventsController {
 
     @GetMapping("/{eventId}")
     public EventDto getEvent(@PathVariable("eventId") Long eventId) {
-        return eventConverter.domainToDto(eventService.getEventById(eventId));
+        return eventService.getEventById(eventId);
     }
 
     @PutMapping("/{eventId}")

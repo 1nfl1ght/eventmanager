@@ -11,6 +11,8 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,10 +30,12 @@ public class EventScheduler {
     private static final Logger log = LoggerFactory.getLogger(EventScheduler.class);
     private final EventRepository eventRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final CacheManager cacheManager;
 
-    public EventScheduler(EventRepository eventRepository, ApplicationEventPublisher applicationEventPublisher) {
+    public EventScheduler(EventRepository eventRepository, ApplicationEventPublisher applicationEventPublisher, CacheManager cacheManager) {
         this.eventRepository = eventRepository;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.cacheManager = cacheManager;
     }
 
     @Scheduled(cron = "${event_status_cron}")
@@ -46,6 +50,8 @@ public class EventScheduler {
                     event.setStatus(EventStatus.STARTED);
                     applicationEventPublisher.publishEvent(
                             buildStatusChangeMessage(event, oldStatus, EventStatus.STARTED));
+
+                    evictEventCache(event.getId());
                 });
 
         eventRepository.findAllByStatus(EventStatus.STARTED).stream()
@@ -55,6 +61,8 @@ public class EventScheduler {
                     event.setStatus(EventStatus.FINISHED);
                     applicationEventPublisher.publishEvent(
                             buildStatusChangeMessage(event, oldStatus, EventStatus.FINISHED));
+
+                    evictEventCache(event.getId());
                 });
     }
 
@@ -84,5 +92,16 @@ public class EventScheduler {
         eventMessage.setSubscribers(subscribers);
         eventMessage.setChanges(changes);
         return eventMessage;
+    }
+
+    private void evictEventCache(Long eventId) {
+        try {
+            Cache cache = cacheManager.getCache("eventById");
+            if (cache != null) {
+                cache.evict(eventId);
+            }
+        } catch (Exception e) {
+            log.warn("Cache evict failed for eventId={}, stale entry may remain until TTL", eventId, e);
+        }
     }
 }

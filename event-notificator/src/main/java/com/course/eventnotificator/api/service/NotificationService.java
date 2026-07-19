@@ -9,6 +9,9 @@ import com.course.eventnotificator.kafka.NotificationEntity;
 import com.course.eventnotificator.kafka.NotificationEventPayloadEntity;
 import com.course.eventnotificator.util.notification.NotificationConverter;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,14 +20,17 @@ import java.util.List;
 @Service
 public class NotificationService {
 
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
     private final NotificationRepository repository;
     private final NotificationConverter notificationConverter;
     private final NotificationEventPayloadRepository notificationEventPayloadRepository;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    public NotificationService(NotificationRepository repository, NotificationConverter notificationConverter, NotificationEventPayloadRepository notificationEventPayloadRepository) {
+    public NotificationService(NotificationRepository repository, NotificationConverter notificationConverter, NotificationEventPayloadRepository notificationEventPayloadRepository, StringRedisTemplate stringRedisTemplate) {
         this.repository = repository;
         this.notificationConverter = notificationConverter;
         this.notificationEventPayloadRepository = notificationEventPayloadRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     public List<UnreadNotificationDto> getNotifications(Long userId) {
@@ -42,6 +48,11 @@ public class NotificationService {
             n.setRead(true);
             n.setReadAt(LocalDateTime.now());
         });
+        try {
+            stringRedisTemplate.opsForValue().set("notif:unread:" + userId, String.valueOf(repository.countByUserIdAndIsReadFalse(userId)));
+        } catch (Exception e) {
+            log.warn("Error while setting unread notif cache: ", e);
+        }
     }
 
     @Transactional
@@ -67,8 +78,32 @@ public class NotificationService {
                     notificationEntity.setPayloadId(savedNotificationEventPayloadEntity);
                     notificationEntity.setReadAt(null);
                     notificationEntity.setUserId(sub);
-
                     repository.save(notificationEntity);
                 });
+
+        message.getSubscribers()
+                .forEach(sub -> {
+                    try {
+                        stringRedisTemplate.opsForValue().increment("notif:unread:" + sub);
+                    } catch (Exception e) {
+                        log.warn("Error while setting unread notif cache: ", e);
+                    }
+                });
+    }
+
+    @Transactional
+    public Integer getUnreadNotifications(Long userId) {
+        try {
+            String count =  stringRedisTemplate.opsForValue().get("notif:unread:" + userId);
+            if (count == null) {
+                stringRedisTemplate.opsForValue().set("notif:unread:" + userId, String.valueOf(repository.countByUserIdAndIsReadFalse(userId)));
+                return repository.countByUserIdAndIsReadFalse(userId);
+            } else {
+                return Integer.parseInt(count);
+            }
+        } catch (Exception e) {
+            log.warn("Redis get error, falling back: ", e);
+            return repository.countByUserIdAndIsReadFalse(userId);
+        }
     }
 }

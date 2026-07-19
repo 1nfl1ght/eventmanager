@@ -27,15 +27,13 @@ public class LocationController {
 
     @GetMapping
     public List<LocationDto> getAll() {
-        return locationService.getAllLocations().stream()
-                .map(locationDtoConverter::toDto)
-                .toList();
+        return locationService.getAllLocations();
     }
 
     @GetMapping("/{id}")
     public LocationDto getLocation(@PathVariable("id") Long id) {
         log.info("Location request: id={}", id);
-        return locationDtoConverter.toDto(locationService.getLocationById(id));
+        return locationService.getLocationById(id);
     }
 
     @PostMapping

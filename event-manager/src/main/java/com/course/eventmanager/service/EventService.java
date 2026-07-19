@@ -14,6 +14,8 @@ import com.course.eventmanager.util.event.EventConverter;
 import com.course.eventmanager.util.location.LocationEntityConverter;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +78,7 @@ public class EventService {
         return eventConverter.entityToDomain(savedEvent);
     }
 
+    @CacheEvict(value = "eventById", key = "#eventId")
     @Transactional
     public void deleteEvent(Long eventId, User currentUser) {
         EventMessage eventMessage = new EventMessage();
@@ -109,8 +112,12 @@ public class EventService {
         applicationEventPublisher.publishEvent(eventMessage);
     }
 
-    public Event getEventById(Long eventId) {
-        return eventConverter.entityToDomain(eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found")));
+    @Cacheable(value = "eventById", key = "#eventId")
+    public EventDto getEventById(Long eventId) {
+        return eventConverter.domainToDto(
+                eventConverter.entityToDomain(
+                        eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EntityNotFoundException("Event with id " + eventId + " not found"))));
     }
 
     public List<Event> searchEvents(EventSearchRequest eventSearchRequest) {
@@ -127,6 +134,7 @@ public class EventService {
                 .toList();
     }
 
+    @CacheEvict(value = "eventById", key = "#eventId")
     @Transactional
     public Event updateEvent(Long eventId, EventUpdateRequest eventUpdateRequest, User currentUser) {
         EventEntity eventEntity = eventRepository.findById(eventId)
