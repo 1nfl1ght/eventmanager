@@ -23,7 +23,6 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
-    @Bean
     private GenericJackson2JsonRedisSerializer jsonValueSerializer() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());

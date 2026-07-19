@@ -39,6 +39,6 @@ public class NotificationController {
     public UnreadNotificationsCountResponse getUnreadNotificationsCount() {
         AuthenticatedUser authenticatedUser = authenticationService.getCurrentAuthenticationOrThrow();
         Integer unreadNotifications = service.getUnreadNotifications(authenticatedUser.getUserId());
-        return new UnreadNotificationsCountResponse();
+        return new UnreadNotificationsCountResponse(unreadNotifications);
     }
 }

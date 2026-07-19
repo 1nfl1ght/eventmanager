@@ -48,7 +48,11 @@ public class NotificationService {
             n.setRead(true);
             n.setReadAt(LocalDateTime.now());
         });
-        stringRedisTemplate.opsForValue().set("notif:unread:" + userId, String.valueOf(unread.size()));
+        try {
+            stringRedisTemplate.opsForValue().set("notif:unread:" + userId, String.valueOf(repository.countByUserIdAndIsReadFalse(userId)));
+        } catch (Exception e) {
+            log.warn("Error while setting unread notif cache: ", e);
+        }
     }
 
     @Transactional
@@ -79,7 +83,11 @@ public class NotificationService {
 
         message.getSubscribers()
                 .forEach(sub -> {
-                    stringRedisTemplate.opsForValue().increment("notif:unread:" + sub);
+                    try {
+                        stringRedisTemplate.opsForValue().increment("notif:unread:" + sub);
+                    } catch (Exception e) {
+                        log.warn("Error while setting unread notif cache: ", e);
+                    }
                 });
     }
 
@@ -87,7 +95,12 @@ public class NotificationService {
     public Integer getUnreadNotifications(Long userId) {
         try {
             String count =  stringRedisTemplate.opsForValue().get("notif:unread:" + userId);
-            return count != null ? Integer.parseInt(count) : 0;
+            if (count == null) {
+                stringRedisTemplate.opsForValue().set("notif:unread:" + userId, String.valueOf(repository.countByUserIdAndIsReadFalse(userId)));
+                return repository.countByUserIdAndIsReadFalse(userId);
+            } else {
+                return Integer.parseInt(count);
+            }
         } catch (Exception e) {
             log.warn("Redis get error, falling back: ", e);
             return repository.countByUserIdAndIsReadFalse(userId);
